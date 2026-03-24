@@ -1,8 +1,7 @@
 docker run --rm \
-    --env PATH="/app/llama.cpp/build-cuda/bin:$PATH" \
     --env "HF_TOKEN=$HF_TOKEN" \
     --ulimit memlock=-1:-1 \
-    -v .:/app --runtime=nvidia \
+    --gpus all \
     -v ~/.cache:/root/.cache \
     --network=host \
     -it nvcr.io/nvidia/l4t-jetpack:r36.4.0 \
