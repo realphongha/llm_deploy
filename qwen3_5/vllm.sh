@@ -8,7 +8,7 @@ docker run --gpus all --rm -it \
     --network=host \
     $image \
     Qwen/Qwen3.5-35B-A3B-FP8 \
-    --port 8000 --gpu-memory-utilization 0.75 \
+    --port 8000 --gpu-memory-utilization 0.8 \
     --reasoning-parser qwen3 \
     --enable-prefix-caching \
     --mm-encoder-tp-mode data \
