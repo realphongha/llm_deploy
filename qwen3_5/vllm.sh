@@ -13,4 +13,7 @@ docker run --gpus all --rm -it \
     --enable-prefix-caching \
     --mm-encoder-tp-mode data \
     --mm-processor-cache-type shm \
-    --speculative-config '{"method": "mtp", "num_speculative_tokens": 1}'
+    --limit-mm-per-prompt '{"video": 1}' \
+    --speculative-config '{"method": "mtp", "num_speculative_tokens": 1}' \
+    --mm-processor-kwargs '{"fps": 5.0, "do_sample_frames": true}'
+
