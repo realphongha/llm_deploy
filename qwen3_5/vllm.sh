@@ -8,12 +8,14 @@ docker run --gpus all --rm -it \
     --network=host \
     $image \
     Qwen/Qwen3.5-35B-A3B-FP8 \
-    --port 8000 --gpu-memory-utilization 0.8 \
+    --port 8000 --gpu-memory-utilization 0.9 \
     --reasoning-parser qwen3 \
     --enable-prefix-caching \
     --mm-encoder-tp-mode data \
     --mm-processor-cache-type shm \
+    --max-model-len 262144 \
     --limit-mm-per-prompt '{"video": 1}' \
     --speculative-config '{"method": "mtp", "num_speculative_tokens": 1}' \
-    --mm-processor-kwargs '{"fps": 5.0, "do_sample_frames": true}'
+    --mm-processor-kwargs '{"fps": 3.0, "do_sample_frames": false}' \
+    --media-io-kwargs '{ "video": {"fps": 3} }'
 

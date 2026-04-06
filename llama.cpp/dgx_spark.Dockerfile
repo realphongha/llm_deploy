@@ -1,6 +1,6 @@
 FROM nvidia/cuda:13.0.2-devel-ubuntu24.04
 
-ARG LLAMA_CPP_TAG=b8416
+ARG LLAMA_CPP_TAG=b8671
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LD_LIBRARY_PATH=/usr/local/cuda-13/compat
