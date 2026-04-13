@@ -1,6 +1,6 @@
 FROM nvidia/cuda:13.0.2-devel-ubuntu24.04
 
-ARG LLAMA_CPP_TAG=b8703
+ARG LLAMA_CPP_TAG=b8720
 ARG SM=89
 
 ENV DEBIAN_FRONTEND=noninteractive
