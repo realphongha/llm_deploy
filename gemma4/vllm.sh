@@ -7,7 +7,7 @@ docker run --gpus all --rm -it \
     --network=host \
     $image \
     nvidia/Gemma-4-31B-IT-NVFP4 \
-    --port $port --gpu-memory-utilization 0.8 \
+    --port $port --gpu-memory-utilization 0.7 \
     --max-model-len 65536 \
     --quantization modelopt \
     --limit-mm-per-prompt '{"video": 1, "image": 32}' \
