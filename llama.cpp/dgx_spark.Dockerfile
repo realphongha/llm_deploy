@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV LD_LIBRARY_PATH=/usr/local/cuda-13/compat
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    cmake build-essential curl ca-certificates pkg-config git \
+    cmake build-essential curl ca-certificates pkg-config git ffmpeg \
     libcurl4-openssl-dev libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
