@@ -8,7 +8,7 @@ ENV LD_LIBRARY_PATH=/usr/local/cuda-13/compat
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake build-essential curl ca-certificates pkg-config git \
-    libcurl4-openssl-dev libssl-dev \
+    libcurl4-openssl-dev libssl-dev ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
