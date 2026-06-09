@@ -11,7 +11,6 @@ docker run --gpus all --rm -it \
     --max-model-len 65536 \
     --quantization modelopt \
     --limit-mm-per-prompt '{"video": 1, "image": 32}' \
-    --enable-auto-tool-choice \
-    --reasoning-parser gemma4 \
-    --tool-call-parser gemma4
+    --enable-auto-tool-choice --tool-call-parser gemma4 \
+    --reasoning-parser gemma4
 
