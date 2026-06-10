@@ -1,4 +1,5 @@
-image=vllm/vllm-openai:gemma4-cu130
+# image=vllm/vllm-openai:gemma4-cu130
+image=vllm/vllm-openai
 port=8008
 docker run --gpus all --rm -it \
     -v ~/.cache/huggingface:/root/.cache/huggingface \
