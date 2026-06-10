@@ -10,6 +10,7 @@ docker run --gpus '"device=0"' --rm -it \
     $image \
     -hf $model \
     --host 0.0.0.0 --port $port \
+    -v \
     --cache-type-k q4_0 --cache-type-v q4_0 \
     -c 65536 -np 1 -b 4096 -ub 4096  -fa on --mlock --threads 8 --n-gpu-layers 999 \
     --temperature 1.0 --top_p 0.95 --top_k 64 \
