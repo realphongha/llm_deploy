@@ -13,12 +13,12 @@ apt-get update && apt-get install -y --no-install-recommends \
     cmake build-essential curl ca-certificates pkg-config git \
     libcurl4-openssl-dev libssl-dev \
     && rm -rf /var/lib/apt/lists/*
-git clone --depth=1 --branch="master" https://github.com/ggml-org/llama.cpp && \
+cd /app/llama.cpp && git clone --depth=1 --branch="master" https://github.com/ggml-org/llama.cpp && \
     cd llama.cpp && \
     cmake -B build-cuda -DGGML_CUDA=ON -DGGML_CUDA_F16=on -DLLAMA_CURL=on -DGGML_CUDA_FA_ALL_QUANTS=ON -DCMAKE_CUDA_ARCHITECTURES="87" -DLLAMA_OPENSSL=ON && \
-    cmake --build build-cuda -j
+    cmake --build build-cuda -j4
 ```
-The build directory should be at `./llm_deploy/llama.cpp` now
+The build directory should be at `./llm_deploy/llama.cpp/llama.cpp/build-cuda` now
 
 # Run llama.cpp
 See `run_jetson_agx_orin.sh`
