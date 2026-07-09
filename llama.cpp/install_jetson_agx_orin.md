@@ -21,4 +21,4 @@ cd /app && git clone --depth=1 --branch="master" https://github.com/ggml-org/lla
 The build directory should be at `./llm_deploy/llama.cpp/llama.cpp/build-cuda` now
 
 # Run llama.cpp
-See `run_jetson_agx_orin.sh`
+See `./gemma4/run_jetson_agx_orin.sh`

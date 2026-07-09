@@ -1,17 +1,24 @@
 # from ./llm_deploy/llama.cpp
+model=unsloth/Qwen3.6-27B-GGUF:Q4_K_M
+image=my-l4t-jetpack:ffmpeg
 docker run --rm \
     --env PATH="/app/llama.cpp/build-cuda/bin:$PATH" \
     --env LD_LIBRARY_PATH="/app/llama.cpp/build-cuda/bin:$LD_LIBRARY_PATH" \
     --env "HF_TOKEN=$HF_TOKEN" \
     --ulimit memlock=-1:-1 \
-    -v .:/app --runtime=nvidia \
+    -v ../llama.cpp:/app \
+    -v .:/gemma4 \
+    --runtime=nvidia \
     -v /mnt/ssd1t/phonghh/.cache:/root/.cache \
     --network=host \
-    -it nvcr.io/nvidia/l4t-jetpack:r36.4.0 \
+    -it $image \
     llama-server \
-    -hf unsloth/gemma-4-E4B-it-GGUF:Q4_K_M \
+    -hf $model \
     --host 0.0.0.0 --port 8002 \
     -fa on --mlock --threads 8 --n-gpu-layers 999 \
     -b 4096 -ub 4096 --cache-type-k q4_0 --cache-type-v q4_0 \
     -np 1 -c 65536 \
-    --image-max-tokens 560
+    --temperature 0.7 --top_p 0.8 --top_k 20 --min_p 0.0 --presence_penalty 1.5 --repeat_penalty 1.0 \
+    --chat-template-kwargs '{"enable_thinking":false}' \
+    --image-min-tokens 1024
+    # --no-mmproj \
