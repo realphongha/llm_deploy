@@ -1,0 +1,65 @@
+{
+  "encoder_type": "litellm",
+  "encoder_name": "ollama/embeddinggemma",
+  "routes": [
+    {
+      "name": "agentic",
+      "description": "Planning, orchestration, decisions, analysis — route to Qwen3.6",
+      "utterances": [
+        "plan the translation batch for this session",
+        "decide which chapters to translate next",
+        "analyze the chapter structure and content",
+        "orchestrate the workflow for this session",
+        "determine the best approach for this chapter",
+        "identify missing chapters in the translation",
+        "read the novel metadata and plan the work",
+        "decide how to handle this entity name",
+        "evaluate whether this translation is correct",
+        "what should I do next in the pipeline",
+        "find the right batch of chapters within budget",
+        "check which chapters still need translation",
+        "prioritize the next steps in the workflow",
+        "determine which vault entries are relevant",
+        "decide how to handle this new character name",
+        "compare the raw and translated text",
+        "assess the overall progress of translation",
+        "plan the entity extraction for this chapter",
+        "choose the best strategy for this genre",
+        "decide if this needs re-translation"
+      ],
+      "score_threshold": 0.45
+    },
+    {
+      "name": "task",
+      "description": "Translation, entity extraction, review, summary — route to Gemma4",
+      "utterances": [
+        "translate this chapter from Chinese to Vietnamese",
+        "translate the following text",
+        "extract entities from the Chinese text",
+        "review this Vietnamese translation for quality",
+        "generate a chapter summary",
+        "check for omissions in the translation",
+        "verify glossary consistency",
+        "create a knowledge entry for this entity",
+        "apply the glossary terms to this translation",
+        "find character names in this text",
+        "identify cultivation techniques in this chapter",
+        "translate this character name to Han Viet",
+        "check for untranslated Chinese fragments",
+        "verify the pronoun mapping in dialogue",
+        "improve the Vietnamese phrasing",
+        "extract locations from the text",
+        "identify relationships between characters",
+        "update the vault with new entities",
+        "summarize the key plot developments",
+        "list newly introduced entities",
+        "translate this novel title",
+        "check cultivation term consistency",
+        "preserve paragraph breaks in translation",
+        "map chinese idioms to vietnamese equivalents",
+        "flag new entities for vault update"
+      ],
+      "score_threshold": 0.45
+    }
+  ]
+}

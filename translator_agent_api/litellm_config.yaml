@@ -1,0 +1,61 @@
+# router_settings:
+#   routing_strategy: "simple-shuffle"
+#
+model_list:
+  # ── Backend Models ──────────────────────────────────
+
+  # Agentic model: Qwen3.6 for planning, orchestration, decisions
+  - model_name: agentic
+    litellm_params:
+      model: openai/unsloth/Qwen3.6-35B-A3B-GGUF:MXFP4_MOE
+      api_base: http://127.0.0.1:8002
+      api_key: "blah"
+
+  # Task model: Gemma4 for translation, review, entities, summary
+  - model_name: task
+    litellm_params:
+      model: openai/unsloth/gemma-4-26B-A4B-it-GGUF:Q4_K_M
+      api_base: http://192.168.1.50:8002
+      api_key: "blah"
+
+  # ── Embedding Model ────────────────────────────────
+  # Required by the auto-router for semantic classification.
+  # Uses OpenAI by default. To use a local alternative:
+  #   - Ollama: model: ollama/nomic-embed-text, api_base: http://localhost:11434
+  #   - llama.cpp: model: openai/text-embedding-3-small, api_base: http://192.168.1.40:8002/v1
+  #   - (llama.cpp must be started with --embedding flag)
+  - model_name: embedding-model
+    litellm_params:
+      model: ollama/embeddinggemma
+      api_base: http://127.0.0.1:11434
+      api_key: "blah"
+
+  # ── Auto Router ────────────────────────────────────
+  # Single endpoint the agent calls. Routes by prompt intent.
+  - model_name: translator_api
+    litellm_params:
+      model: auto_router/translator_api
+      auto_router_config_path: ./router.json
+      auto_router_default_model: task
+      auto_router_embedding_model: embedding-model
+
+  # ── Model Aliases ──────────────────────────────────
+  # If the opencode agent sends a specific model name (e.g. "deepseek-v4-flash-free"),
+  # map it here so it lands on the auto-router instead.
+  # Uncomment and adjust the key to match your agent's configured model name:
+  # - model_name: deepseek-v4-flash-free
+  #   litellm_params:
+  #     model: openai/auto_router1
+  #     api_base: http://localhost:4000
+
+general_settings:
+  # master_key: "abc"
+  # drop_params: true
+
+  # ── Database (optional) ────────────────────────────
+  # Uncomment for spend tracking, key management, and logging:
+  # database_url: os.environ/LITELLM_DATABASE_URL
+  # (set LITELLM_DATABASE_URL=sqlite:///litellm.db for local SQLite)
+
+litellm_settings:
+  set_verbose: true
