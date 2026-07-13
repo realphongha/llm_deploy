@@ -43,6 +43,9 @@ def classify_intent(last_user_message):
     headers = {"Authorization": f"Bearer {API_KEY}"}
     truncated = last_user_message[:200] + "..." if len(last_user_message) > 200 else last_user_message
     logging.info('MSG: "%s"', truncated)
+    if not truncated.strip():
+        logging.info("DECISION: task (empty MSG)")
+        return "task"
     try:
         resp = requests.post(url, json=payload, headers=headers, timeout=30)
         resp.raise_for_status()
