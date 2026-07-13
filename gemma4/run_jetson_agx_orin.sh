@@ -1,12 +1,12 @@
-# from ./llm_deploy/llama.cpp
+# from ./llm_deploy
 image=my-l4t-jetpack:ffmpeg
 docker run --rm \
     --env PATH="/app/llama.cpp/build-cuda/bin:$PATH" \
     --env LD_LIBRARY_PATH="/app/llama.cpp/build-cuda/bin:$LD_LIBRARY_PATH" \
     --env "HF_TOKEN=$HF_TOKEN" \
     --ulimit memlock=-1:-1 \
-    -v ../llama.cpp:/app \
-    -v .:/gemma4 \
+    -v ./llama.cpp:/app \
+    -v ./gemma4:/gemma4 \
     --runtime=nvidia \
     -v /mnt/ssd1t/phonghh/.cache:/root/.cache \
     --network=host \
