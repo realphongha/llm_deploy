@@ -1,3 +1,4 @@
+from textwrap import indent
 import os
 import time
 import logging
@@ -15,93 +16,79 @@ app = Flask(__name__)
 
 QWEN_API_BASE = os.environ.get("QWEN_API_BASE", "http://127.0.0.1:8002/v1")
 GEMMA_API_BASE = os.environ.get("GEMMA_API_BASE", "http://192.168.1.50:8002/v1")
+# GEMMA_API_BASE = os.environ.get("GEMMA_API_BASE", "http://127.0.0.1:8003/v1")
 QWEN_MODEL = os.environ.get("QWEN_MODEL", "unsloth/Qwen3.6-35B-A3B-GGUF:MXFP4_MOE")
 GEMMA_MODEL = os.environ.get("GEMMA_MODEL", "unsloth/gemma-4-26B-A4B-it-GGUF:Q4_K_M")
 API_KEY = os.environ.get("API_KEY", "blah")
 DISABLE_THINKING = os.environ.get("DISABLE_THINKING", "true").lower() in ("1", "true", "yes")
 
-CLASSIFICATION_SYSTEM_PROMPT = """You are a classifier. Determine whether the user's request is 'agentic' or 'task'.
+CLASSIFICATION_USER_PROMPT = """
+Without continuing the tasks, classify what the NEXT assistant response should primarily do:
 
-agentic = planning, orchestration, decisions, analysis, workflow management, assessing progress, choosing strategies, determining approaches
-task = translation, entity extraction, review, summary, glossary checking, applying terms, improving phrasing, checking consistency
+agentic
+= the next response should primarily call tools, inspect the repository, modify files, execute commands, or decide the workflow.
 
-Reply with exactly one word: agentic or task."""
+task
+= the next response should primarily translate, review, extract entities, summarize, rewrite, apply terminology, or otherwise generate content using the information already available.
+
+Reply with **exactly one word**: "agentic" or "task".
+"""
 
 
-def classify_intent(last_user_message):
+def classify_intent(messages):
     url = f"{QWEN_API_BASE}/chat/completions"
     payload = {
         "model": QWEN_MODEL,
-        "messages": [
-            {"role": "system", "content": CLASSIFICATION_SYSTEM_PROMPT},
-            {"role": "user", "content": last_user_message},
-        ],
+        "messages": messages + [{"role": "user", "content": CLASSIFICATION_USER_PROMPT},],
         "max_tokens": 10,
         "temperature": 0,
         "stream": False,
     }
     headers = {"Authorization": f"Bearer {API_KEY}"}
-    truncated = last_user_message[:200] + "..." if len(last_user_message) > 200 else last_user_message
-    logging.info('MSG: "%s"', truncated)
-    if not truncated.strip():
-        logging.info("DECISION: task (empty MSG)")
-        return "task"
     try:
-        resp = requests.post(url, json=payload, headers=headers, timeout=30)
+        logging.info("")
+        logging.info("=" * 80)
+        logging.info("CLASSIFIER")
+        logging.info("=" * 80)
+        logging.info("Conversation messages: %d", len(messages))
+        if len(messages) > 1:
+            logging.info(f"Last message: {messages[-1]}")
+        resp = requests.post(
+            url,
+            json=payload,
+            headers=headers,
+            timeout=30,
+        )
         resp.raise_for_status()
-        result = resp.json()
-        raw = result["choices"][0]["message"]["content"]
-        logging.info('RESP: "%s"', raw.strip())
-        content = raw.strip().lower()
-        decision = "agentic" if "agentic" in content else "task"
-        logging.info("DECISION: %s", decision)
+        raw = (
+            resp.json()["choices"][0]["message"]["content"]
+            .strip()
+            .lower()
+        )
+        if raw == "agentic":
+            decision = "agentic"
+        elif raw == "task":
+            decision = "task"
+        else:
+            decision = "task"
+        logging.info("Raw: %s", raw)
+        logging.info("Decision: %s", decision)
         return decision
     except Exception as e:
-        logging.error("ERROR: %s", e)
-        logging.info("DECISION: task (fallback)")
+        logging.exception(e)
+        logging.info("Decision: task (fallback)")
         return "task"
 
-
-def build_classifier_context(messages, max_messages=6, max_chars=4000):
-    """
-    Build a compact context for intent classification.
-
-    Walk backwards through the conversation, collecting the most recent
-    system/user/tool messages until either:
-      - max_messages is reached
-      - max_chars is exceeded
-
-    Assistant messages are ignored because they rarely indicate intent.
-    """
-
-    selected = []
-    total = 0
-
-    for msg in reversed(messages):
-        role = msg.get("role", "")
-
-        if role == "assistant":
-            continue
-
-        content = msg.get("content", "")
-        if not isinstance(content, str):
-            continue
-
-        size = len(content)
-
-        if total + size > max_chars:
-            break
-
-        selected.append(f"{role}: {content}")
-        total += size
-
-        if len(selected) >= max_messages:
-            break
-
-    selected.reverse()
-    return "\n\n".join(selected)
-
 def proxy_chat(target_api_base, target_model, body, stream):
+    logging.info("")
+    logging.info("=" * 80)
+    logging.info("ROUTE")
+    logging.info("=" * 80)
+    logging.info("Model   : %s", target_model)
+    logging.info("Backend : %s", target_api_base)
+    logging.info("Thinking: %s", not DISABLE_THINKING)
+    logging.info("Stream  : %s", stream)
+
     url = f"{target_api_base}/chat/completions"
     headers = {
         "Authorization": request.headers.get("Authorization", f"Bearer {API_KEY}"),
@@ -151,8 +138,11 @@ def chat_completions():
     if requested_model == "task":
         return proxy_chat(GEMMA_API_BASE, GEMMA_MODEL, data, stream)
 
-    last_msg = build_classifier_context(data["messages"])
-    intent = classify_intent(last_msg)
+    intent = classify_intent(data["messages"])
+
+    import json
+    with open("convo.json", "w") as f:
+        json.dump(data, f, indent=4)
 
     if intent == "agentic":
         return proxy_chat(QWEN_API_BASE, QWEN_MODEL, data, stream)
