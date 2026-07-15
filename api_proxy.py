@@ -75,14 +75,37 @@ def chat_completions():
     stream = data.get("stream", False)
     return proxy_chat(API_BASE, MODEL, data, stream)
 
-@app.route("/v1/models", methods=["GET"])
-def list_models():
-    return jsonify({
-        "object": "list",
-        "data": [
-            {"id": MODEL, "object": "model", "created": int(time.time()), "owned_by": "system"},
-        ],
-    })
+@app.route("/v1/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"])
+def proxy_all(path):
+    url = f"{API_BASE}/{path}"
+    headers = {"Authorization": request.headers.get("Authorization", f"Bearer {API_KEY}")}
+    if request.method in ("POST", "PUT", "PATCH"):
+        headers["Content-Type"] = "application/json"
+
+    resp = requests.request(
+        method=request.method,
+        url=url,
+        headers=headers,
+        params=request.args,
+        data=request.get_data(),
+        stream=True,
+        timeout=300,
+    )
+
+    excluded_headers = {"content-encoding", "content-length", "transfer-encoding", "connection"}
+    resp_headers = [(k, v) for k, v in resp.headers.items() if k.lower() not in excluded_headers]
+
+    if "text/event-stream" in resp.headers.get("content-type", ""):
+        def generate():
+            try:
+                for line in resp.iter_lines():
+                    if line:
+                        yield line.decode("utf-8") + "\n\n"
+            except Exception as e:
+                yield f"data: {{\"error\": \"{e}\"}}\n\n"
+        return Response(stream_with_context(generate()), status=resp.status_code, headers=resp_headers)
+
+    return Response(resp.content, status=resp.status_code, headers=resp_headers)
 
 
 if __name__ == "__main__":
