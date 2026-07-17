@@ -1,7 +1,6 @@
 # from ./llm_deploy
-model=unsloth/gemma-4-26B-A4B-it-GGUF:Q4_K_M
-# model=unsloth/gemma-4-E4B-it-GGUF:Q4_K_M
 image=my-l4t-jetpack:ffmpeg
+model=unsloth/gemma-4-E4B-it-GGUF:Q4_K_M
 docker run --rm \
     --env PATH="/app/llama.cpp/build-cuda/bin:$PATH" \
     --env LD_LIBRARY_PATH="/app/llama.cpp/build-cuda/bin:$LD_LIBRARY_PATH" \
@@ -14,13 +13,11 @@ docker run --rm \
     --network=host \
     -it $image \
     llama-server \
-    -hf $model --no-mmproj \
+    -hf $model \
     --host 0.0.0.0 --port 8002 \
     -fa on --mlock --threads 8 --n-gpu-layers 999 \
-    -b 4096 -ub 4096 --cache-type-k q4_0 --cache-type-v q4_0 \
+    -b 8192 -ub 2048 --cache-type-k q4_0 --cache-type-v q4_0 \
     -np 1 -c 65536 \
     --temperature 1.0 --top_p 0.95 --top_k 64 \
     --chat-template-kwargs '{"enable_thinking": false}' \
-    # --repeat-penalty 1.3 --presence_penalty 0.3 --frequency-penalty 0.3
-    # --jinja --chat-template-file /gemma4/chat_template_gemma4.fixed.jinja
-    # --reasoning off
+    --image-max-tokens 280
