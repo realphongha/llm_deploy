@@ -1,6 +1,6 @@
 image=llama-cpp
 port=8003
-model=unsloth/gemma-4-26B-A4B-it-GGUF:MXFP4_MOE
+model=yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q4_K_M
 docker run --gpus all --rm -it \
     --ulimit memlock=-1:-1 \
     -v ~/.cache:/root/.cache \
@@ -8,13 +8,13 @@ docker run --gpus all --rm -it \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
     --network=host \
-    --name llama-cpp-gemma4 \
+    --name llama-cpp-gemma4-fable5 \
     $image \
     -hf $model --no-mmproj \
     --host 0.0.0.0 --port $port \
-    -c 65536 -np 1 -b 8192 -ub 2048 -fa on --mlock --threads 8 --n-gpu-layers 999 \
+    -c 65536 -np 1 -b 8192 -ub 2048 -fa on --mlock --threads 16 --n-gpu-layers 999 \
     --cache-type-k q8_0 --cache-type-v q8_0 \
-    --temperature 1.0 --top_p 0.95 --top_k 64 \
+    --temperature 0.3 --top_p 0.95 --top_k 64 \
     --chat-template-kwargs '{"enable_thinking": false}' \
-    --jinja --chat-template-file /gemma4/chat_template_26b_31b.jinja
+    --jinja
 
