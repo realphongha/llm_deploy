@@ -17,10 +17,8 @@ docker run --rm \
     -hf $model --no-mmproj \
     --host 0.0.0.0 --port 8002 \
     -fa on --mlock --threads 8 --n-gpu-layers 999 \
-    -b 4096 -ub 4096 --cache-type-k q4_0 --cache-type-v q4_0 \
+    -b 8192 -ub 2048 --cache-type-k q4_0 --cache-type-v q4_0 \
     -np 1 -c 65536 \
     --temperature 1.0 --top_p 0.95 --top_k 64 \
     --chat-template-kwargs '{"enable_thinking": false}' \
-    # --repeat-penalty 1.3 --presence_penalty 0.3 --frequency-penalty 0.3
-    # --jinja --chat-template-file /gemma4/chat_template_gemma4.fixed.jinja
-    # --reasoning off
+    --jinja --chat-template-file /gemma4/chat_template_26b_31b.jinja
