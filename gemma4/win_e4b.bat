@@ -1,14 +1,15 @@
 @echo off
 
 llama-server ^
-    -hf unsloth/gemma-4-E4B-it-GGUF:Q4_K_M --no-mmproj ^
+    -hf unsloth/gemma-4-E4B-it-GGUF:Q4_K_M ^
     --host 0.0.0.0 --port 8002 ^
     -fa on --mlock --threads 8 --n-gpu-layers 999 ^
     -b 8192 -ub 2048 --cache-type-k q4_0 --cache-type-v q4_0 ^
-    -np 4 -c 131072 -cb ^
+    -np 2 -c 131072 -cb ^
     --temperature 1.0 --top_p 0.95 --top_k 64 ^
     --reasoning off ^
     --jinja --chat-template-file chat_template_e4b.jinja ^
-    --spec-type draft-mtp --spec-draft-n-max 2
+    --spec-type draft-mtp --spec-draft-n-max 2 ^
+    --image-max-tokens 1120
 
 pause
