@@ -17,8 +17,6 @@ app = Flask(__name__)
 API_BASE = os.environ.get("API_BASE", "http://127.0.0.1:8002/v1")
 MODEL = os.environ.get("MODEL", "unsloth/DeepSeek-V4-Flash-GGUF:UD-IQ3_XXS")
 API_KEY = os.environ.get("API_KEY", "blah")
-API_BASE = "http://127.0.0.1:8003/v1"
-MODEL = "yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q4_K_M"
 DISABLE_THINKING = os.environ.get("DISABLE_THINKING", "true").lower() in ("1", "true", "yes")
 
 def proxy_chat(target_api_base, target_model, body, stream):

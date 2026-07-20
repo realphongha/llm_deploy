@@ -1,6 +1,6 @@
 image=llama-cpp
 port=8002
-model=unsloth/Qwen3.6-27B-GGUF:Q4_K_M
+model=unsloth/Qwen3.6-27B-MTP-GGUF:UD-Q4_K_XL
 # --ulimit memlock=-1:-1 \
 docker run --gpus all --rm -it \
     --ulimit memlock=-1:-1 \
