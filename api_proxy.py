@@ -1,5 +1,6 @@
 from textwrap import indent
 import os
+import json
 import time
 import logging
 import requests
@@ -14,12 +15,84 @@ logging.basicConfig(
 
 app = Flask(__name__)
 
-API_BASE = os.environ.get("API_BASE", "http://127.0.0.1:8002/v1")
-MODEL = os.environ.get("MODEL", "unsloth/DeepSeek-V4-Flash-GGUF:UD-IQ3_XXS")
-API_KEY = os.environ.get("API_KEY", "blah")
 DISABLE_THINKING = os.environ.get("DISABLE_THINKING", "true").lower() in ("1", "true", "yes")
 
-def proxy_chat(target_api_base, target_model, body, stream):
+# ---------------------------------------------------------------------------
+# Model alias map from JSON config  (required — no env fallback)
+# ---------------------------------------------------------------------------
+# Schema:
+#   {
+#     "default_api_base": "http://127.0.0.1:8002/v1",          # required
+#     "default_model":   "unsloth/DeepSeek-V4-Flash-GGUF:UD-IQ3_XXS",  # required
+#     "api_key":         "$OPENROUTER_API_KEY",                # optional, $ prefix = env var
+#     "models": {
+#       "smart": { "model": "qwen3.6-27b", "api_base": "http://127.0.0.1:8003/v1", "api_key": "$SMART_KEY" },
+#       "fast":  { "model": "qwen3.6-35b", "api_base": "http://127.0.0.1:8004/v1" },
+#     }
+#   }
+#
+# When incoming model name matches an alias key → real model + optional api_base/api_key.
+# Non-alias names pass through as-is.
+
+_MODEL_MAP_CONF = None
+
+
+def _expand_val(v):
+    """If v starts with '$', read the named env var.  Otherwise return v as-is."""
+    if isinstance(v, str) and v.startswith("$"):
+        return os.environ.get(v[1:], "")
+    return v
+
+
+def _load_model_map():
+    global _MODEL_MAP_CONF
+    if _MODEL_MAP_CONF is not None:
+        return _MODEL_MAP_CONF
+
+    path = os.environ.get("MODEL_MAP_CONFIG", "model_map.json")
+    if not os.path.isfile(path):
+        raise RuntimeError(f"Model-map config not found: {path}")
+
+    with open(path, "r") as fh:
+        _MODEL_MAP_CONF = json.load(fh)
+
+    logging.info("Loaded model-map config from %s (%d aliases)",
+                 path, len(_MODEL_MAP_CONF.get("models", {})))
+    return _MODEL_MAP_CONF
+
+
+def _default_api_base():
+    return _load_model_map().get("default_api_base", "http://127.0.0.1:8002/v1")
+
+
+def _default_api_key():
+    conf = _load_model_map()
+    k = conf.get("api_key")
+    return _expand_val(k) if k else None
+
+
+def resolve_model(incoming_model):
+    """Resolve an incoming model name to (real_model, api_base, api_key_or_None)."""
+    conf = _load_model_map()
+    models = conf.get("models", {})
+
+    if incoming_model in models:
+        entry = models[incoming_model]
+        real_model = entry.get("model") or conf["default_model"]
+        api_base   = entry.get("api_base") or conf["default_api_base"]
+        api_key    = entry.get("api_key") or conf.get("api_key")
+        if api_key:
+            api_key = _expand_val(api_key)
+        logging.info("Alias '%s' → model=%s backend=%s", incoming_model, real_model, api_base)
+        return real_model, api_base, api_key
+
+    # Pass-through — use top-level defaults
+    api_key = conf.get("api_key")
+    if api_key:
+        api_key = _expand_val(api_key)
+    return incoming_model, conf["default_api_base"], api_key
+
+def proxy_chat(target_api_base, target_model, body, stream, api_key=None):
     logging.info("")
     logging.info("=" * 80)
     logging.info("ROUTE")
@@ -30,8 +103,13 @@ def proxy_chat(target_api_base, target_model, body, stream):
     logging.info("Stream  : %s", stream)
 
     url = f"{target_api_base}/chat/completions"
+    # Use resolved api_key if provided; otherwise forward incoming auth header
+    if api_key:
+        bearer = f"Bearer {api_key}"
+    else:
+        bearer = request.headers.get("Authorization", "Bearer blah")
     headers = {
-        "Authorization": request.headers.get("Authorization", f"Bearer {API_KEY}"),
+        "Authorization": bearer,
         "Content-Type": "application/json",
     }
     body = dict(body)
@@ -71,12 +149,18 @@ def chat_completions():
         return jsonify({"error": "messages is required"}), 400
 
     stream = data.get("stream", False)
-    return proxy_chat(API_BASE, MODEL, data, stream)
+
+    # Resolve incoming model name via alias map, then pick the right backend
+    incoming = data.get("model", "default")
+    real_model, backend, api_key = resolve_model(incoming)
+    return proxy_chat(backend, real_model, data, stream, api_key)
 
 @app.route("/v1/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"])
 def proxy_all(path):
-    url = f"{API_BASE}/{path}"
-    headers = {"Authorization": request.headers.get("Authorization", f"Bearer {API_KEY}")}
+    url = f"{_default_api_base()}/{path}"
+    api_key = _default_api_key()
+    bearer = f"Bearer {api_key}" if api_key else request.headers.get("Authorization", "Bearer blah")
+    headers = {"Authorization": bearer}
     if request.method in ("POST", "PUT", "PATCH"):
         headers["Content-Type"] = "application/json"
 
