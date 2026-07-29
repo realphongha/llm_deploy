@@ -6,7 +6,7 @@ docker run --gpus '"device=0"' --rm -it \
     -v /mnt/ssd8tb/shared_workspace/phonghh/.cache/huggingface:/root/.cache/huggingface \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
-    --name llama-cpp-gemma4-vision \
+    --name llama-cpp-gemma4-26b \
     $image \
     -hf $model \
     --host 0.0.0.0 --port $port \
