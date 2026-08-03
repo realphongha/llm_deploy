@@ -6,7 +6,8 @@ docker run --gpus all --rm -it \
     --env "HF_TOKEN=$HF_TOKEN" \
     --env CUTE_DSL_ARCH=sm_121a \
     --network=host \
-    $image $model --port $port \
+    $image \
+    $model --port $port \
     --trust-remote-code \
     --tensor-parallel-size 1 \
     --gpu-memory-utilization 0.7 \
