@@ -8,11 +8,11 @@ docker run --gpus all --rm -it \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
     --network=host \
-    --name llama-cpp-gemma4 \
+    --name llama-cpp-gemma4-26b \
     $image \
     -hf $model --no-mmproj \
     --host 0.0.0.0 --port $port \
-    -c 262144 -np 2 -cb -b 8192 -ub 2048 -fa on --mlock --threads 8 --n-gpu-layers 999 \
+    -c 131072 -np 2 -cb -b 8192 -ub 2048 -fa on --mlock --threads 8 --n-gpu-layers 999 \
     --cache-type-k q8_0 --cache-type-v q8_0 \
     --temperature 1.0 --top_p 0.95 --top_k 64 \
     --spec-type draft-mtp --spec-draft-n-max 2 \

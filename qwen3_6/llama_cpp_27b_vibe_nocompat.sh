@@ -8,7 +8,7 @@ docker run --gpus '"device=1"' --rm -it \
     --env "LD_LIBRARY_PATH=" \
     -p $port:$port \
     --network=host \
-    --name llama-cpp-qwen3.6 \
+    --name llama-cpp-qwen3.6-27b \
     $image \
     -hf $model --no-mmproj \
     --host 0.0.0.0 --port $port \
