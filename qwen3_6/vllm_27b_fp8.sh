@@ -1,17 +1,22 @@
 image=vllm/vllm-openai
 model=Qwen/Qwen3.6-27B-FP8
-port=8008
+port=8002
 docker run --gpus all --rm -it \
     -v ~/.cache/huggingface:/root/.cache/huggingface \
     --env "HF_TOKEN=$HF_TOKEN" \
+    --env "VLLM_USE_DEEP_GEMM=0" \
+    --env CUTE_DSL_ARCH=sm_121a \
     --network=host \
     $image $model \
     --port $port --gpu-memory-utilization 0.8 \
-    --max-model-len 65536 \
-    --limit-mm-per-prompt '{"video": 1}' \
-    --speculative-config '{"method": "mtp", "num_speculative_tokens": 1}' \
+    --max-model-len 242144 \
+    --trust-remote-code \
+    --max-num-seqs 512 \
+    --tensor-parallel-size 1 \
+    --enable-auto-tool-choice \
+    --tool-call-parser qwen3_coder \
     --reasoning-parser qwen3 \
-    # --mm-encoder-tp-mode data --mm-processor-cache-type shm
-    # --mm-processor-kwargs '{"fps": 3.0, "do_sample_frames": false}' \
-    # --media-io-kwargs '{ "video": {"fps": 3} }'
-
+    --speculative-config '{"method":"mtp","num_speculative_tokens":3}' \
+    --moe-backend flashinfer_b12x \
+    --language-model-only
+    # --limit-mm-per-prompt '{"video": 1}' \
