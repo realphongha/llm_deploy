@@ -98,12 +98,18 @@ async def benchmark_single_request(
     )
 
     async for chunk in stream:
-      # Token stream delta. Reasoning models stream thought tokens in
-      # delta.reasoning before emitting delta.content; both count as
-      # generation timing so decode span isn't collapsed to a final burst.
+      # Token stream delta. Reasoning models stream thought tokens before
+      # emitting visible content, and this also holds for llama.cpp servers
+      # enabled with thinking, which emit them in a `reasoning_content`
+      # field (rather than vLLM-style `reasoning`). Capture all of them so
+      # the decode span isn't collapsed to a final burst of content tokens.
       if chunk.choices and len(chunk.choices) > 0:
         delta = chunk.choices[0].delta
-        delta_text = (delta.content or "") + (getattr(delta, "reasoning", "") or "")
+        delta_text = (
+            (delta.content or "")
+            + (getattr(delta, "reasoning_content", "") or "")
+            + (getattr(delta, "reasoning", "") or "")
+        )
         if delta_text:
           now = time.perf_counter()
           if t_first is None:

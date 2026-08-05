@@ -15,9 +15,16 @@ api_key: "$OPENROUTER_API_KEY"
 models:
   smart:
     model: "qwen3.6-27b"
-    api_base: "http://192.168.1.223:8002/v1"
+    api_base: "http://127.0.0.1:8002/v1"
     api_key: "abc"
+    options:
+      temperature: 0.6
+      top_p: 0.95
+      presence_penalty: 0.0
     extra_kwargs:
+      top_k: 20
+      min_p: 0.0
+      repetition_penalty: 1.0
       chat_template_kwargs:
         enable_thinking: true
 

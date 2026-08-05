@@ -10,7 +10,7 @@ docker run --gpus all --rm -it \
     $model --port $port \
     --trust-remote-code \
     --tensor-parallel-size 1 \
-    --gpu-memory-utilization 0.7 \
+    --gpu-memory-utilization 0.8 \
     --enable-auto-tool-choice \
     --tool-call-parser qwen3_coder \
     --speculative-config '{"method":"mtp","num_speculative_tokens":2}' \
@@ -18,3 +18,4 @@ docker run --gpus all --rm -it \
     --moe-backend flashinfer_b12x \
     --max-model-len 242144 \
     --reasoning-parser qwen3 \
+    --default-chat-template-kwargs '{"preserve_thinking":false}' \

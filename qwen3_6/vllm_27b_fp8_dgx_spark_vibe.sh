@@ -7,14 +7,11 @@ docker run --gpus all --rm -it \
     --env "VLLM_USE_DEEP_GEMM=0" \
     --env CUTE_DSL_ARCH=sm_121a \
     --network=host \
-    --entrypoint "" \
     $image \
-    bash
     $model \
     --port $port --gpu-memory-utilization 0.8 \
     --max-model-len 242144 \
     --trust-remote-code \
-    --max-num-seqs 512 \
     --tensor-parallel-size 1 \
     --enable-auto-tool-choice \
     --tool-call-parser qwen3_coder \
