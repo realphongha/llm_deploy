@@ -3,11 +3,25 @@ import os
 import yaml
 import time
 import logging
+from logging.handlers import RotatingFileHandler
 import requests
 from flask import Flask, request, Response, stream_with_context, jsonify
 
+# Rotate classifier.log once it hits 10 MB; keep 5 rotated backups (total ~60 MB max).
+# Override via env: CLASSIFIER_LOG, CLASSIFIER_LOG_MAX_BYTES, CLASSIFIER_LOG_BACKUPS.
+_LOG_FILE = os.environ.get("CLASSIFIER_LOG", "classifier.log")
+_LOG_MAX_BYTES = int(os.environ.get("CLASSIFIER_LOG_MAX_BYTES", 1 * 1024 * 1024))
+_LOG_BACKUPS = int(os.environ.get("CLASSIFIER_LOG_BACKUPS", 5))
+
 logging.basicConfig(
-    filename="classifier.log",
+    handlers=[
+        RotatingFileHandler(
+            _LOG_FILE,
+            maxBytes=_LOG_MAX_BYTES,
+            backupCount=_LOG_BACKUPS,
+            encoding="utf-8",
+        )
+    ],
     format="[%(asctime)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
     level=logging.INFO,
@@ -220,9 +234,9 @@ def proxy_all(path):
             except Exception as e:
                 yield f"data: {{\"error\": \"{e}\"}}\n\n"
         return Response(stream_with_context(generate()), status=resp.status_code, headers=resp_headers)
-
     return Response(resp.content, status=resp.status_code, headers=resp_headers)
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8008, debug=True)
+    # debug=False + use_reloader=False: no auto-reload, no debugger
+    app.run(host="0.0.0.0", port=8008, debug=False, use_reloader=False)
