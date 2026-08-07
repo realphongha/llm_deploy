@@ -13,6 +13,7 @@ docker run --gpus all --rm -it \
     --cache-type-k bf16 --cache-type-v bf16 \
     -c 262144 -np 1 -b 8192 -ub 2048  -fa on --mlock --threads 8 --n-gpu-layers 999 \
     --temperature 1.0 --top_p 0.95 --top_k 64 \
-    --chat-template-kwargs '{"enable_thinking":true}' \
+    --chat-template-kwargs '{"enable_thinking":false}' \
     --spec-type draft-mtp --spec-draft-n-max 2 \
-    --image-max-tokens 1120
+    --image-max-tokens 280
+    # --image-max-tokens 1120
