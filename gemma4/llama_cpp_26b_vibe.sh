@@ -7,7 +7,7 @@ docker run --gpus '"device=2"' --rm -it \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
     --network=host \
-    --name llama-cpp-gemma4 \
+    --name llama-cpp-gemma4-26b \
     $image \
     -hf $model --no-mmproj \
     --host 0.0.0.0 --port $port \

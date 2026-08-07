@@ -9,7 +9,8 @@ docker run --gpus all --rm -it \
     --env FLASHINFER_DISABLE_VERSION_CHECK=1 \
     --env CUTE_DSL_ARCH=sm_121a \
     --network=host \
-    $image $model --port $port \
+    $image \
+    $model --port $port \
     --limit-mm-per-prompt '{"video": 1}' \
     --tensor-parallel-size 1 --trust-remote-code --dtype auto \
     --quantization modelopt --kv-cache-dtype fp8 --attention-backend flashinfer \

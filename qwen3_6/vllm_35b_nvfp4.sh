@@ -5,7 +5,8 @@ docker run --gpus '"device=1,3"' --rm -it \
     -v ~/.cache/huggingface:/root/.cache/huggingface \
     --env "HF_TOKEN=$HF_TOKEN" \
     --network=host \
-    $image $model --port $port \
+    $image \
+    $model --port $port \
     --max-model-len 65536 \
     --limit-mm-per-prompt '{"video": 1}' \
     --reasoning-parser qwen3 \

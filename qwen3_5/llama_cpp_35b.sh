@@ -7,7 +7,7 @@ docker run --gpus all --rm -it \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
     --network=rl \
-    --name llama-cpp-qwen3.5 \
+    --name llama-cpp-qwen3.5-35b \
     $image \
     -hf $model \
     --host 0.0.0.0 --port $port \
