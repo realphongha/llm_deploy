@@ -12,7 +12,7 @@ docker run --gpus all --rm -it \
     $image \
     -hf $model --no-mmproj \
     --host 0.0.0.0 --port $port \
-    -c 131072 -np 1 -cb -b 8192 -ub 2048 -fa on --mlock --threads 8 --n-gpu-layers 999 \
+    -c 524288 -np 4 -cb -b 8192 -ub 2048 -fa on --mlock --threads 8 --n-gpu-layers 999 \
     --cache-type-k bf16 --cache-type-v bf16 \
     --temperature 1.0 --top_p 0.95 --top_k 64 \
     --spec-type draft-mtp --spec-draft-n-max 2 \
