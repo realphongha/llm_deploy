@@ -2,7 +2,7 @@ image=llama-cpp
 port=8007
 model=unsloth/Qwen3.5-9B-GGUF:Q4_K_M
 docker run --gpus '"device=2"' --rm -it \
-    -v /mnt/ssd8tb/shared_workspace/phonghh/.cache/huggingface:/root/.cache/huggingface \
+    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
     --name llama-cpp-qwen3.5-9b \

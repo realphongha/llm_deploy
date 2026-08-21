@@ -4,7 +4,7 @@ model=unsloth/Qwen3.5-122B-A10B-MTP-GGUF:UD-Q5_K_XL
 # --ulimit memlock=-1:-1 \
 docker run --gpus all --rm -it \
     --ulimit memlock=-1:-1 \
-    -v ~/.cache:/root/.cache \
+    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
     --network=host \

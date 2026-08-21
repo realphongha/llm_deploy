@@ -3,7 +3,7 @@ port=8007
 model=unsloth/Qwen3.6-27B-MTP-GGUF:UD-Q4_K_XL
 # --ulimit memlock=-1:-1 \
 docker run --gpus '"device=2"' --rm -it \
-    -v /mnt/ssd8tb/shared_workspace/phonghh/.cache/huggingface:/root/.cache/huggingface \
+    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
     --name llama-cpp-qwen3.6-27b-vision \

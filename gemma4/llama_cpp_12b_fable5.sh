@@ -3,7 +3,7 @@ port=8003
 model=yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q4_K_M
 docker run --gpus all --rm -it \
     --ulimit memlock=-1:-1 \
-    -v ~/.cache:/root/.cache \
+    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
     -v ./gemma4:/gemma4 \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \

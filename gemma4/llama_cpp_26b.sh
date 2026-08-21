@@ -3,7 +3,7 @@ port=8007
 model=unsloth/gemma-4-26B-A4B-it-GGUF:MXFP4_MOE
     # --ulimit memlock=-1:-1 \
 docker run --gpus '"device=0"' --rm -it \
-    -v /mnt/ssd8tb/shared_workspace/phonghh/.cache/huggingface:/root/.cache/huggingface \
+    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
     --name llama-cpp-gemma4-26b \

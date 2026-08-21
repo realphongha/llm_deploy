@@ -3,7 +3,7 @@ port=8002
 model=nvidia/Gemma-4-31B-IT-NVFP4
 # model=nvidia/Gemma-4-26B-A4B-NVFP4
 docker run --gpus all --rm -it \
-    -v ~/.cache/huggingface:/root/.cache/huggingface \
+    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
     --network=host \

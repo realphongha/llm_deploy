@@ -3,7 +3,7 @@ port=8003
 # model=unsloth/gemma-4-26B-A4B-it-GGUF:MXFP4_MOE
 model=unsloth/gemma-4-26B-A4B-it-qat-GGUF:UD-Q4_K_XL
 docker run --gpus all --rm -it \
-    -v ~/.cache:/root/.cache \
+    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
     -v ./gemma4:/gemma4 \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
