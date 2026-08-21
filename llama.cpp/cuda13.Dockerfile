@@ -20,5 +20,6 @@ RUN git clone --depth=1 --branch="${LLAMA_CPP_TAG}" https://github.com/ggml-org/
     cmake -B build-cuda -DGGML_CUDA=ON -DLLAMA_CURL=ON -DCMAKE_CUDA_ARCHITECTURES=${SM} -DLLAMA_OPENSSL=ON && \
     cmake --build build-cuda -j
 ENV PATH="/app/llama.cpp/build-cuda/bin:$PATH"
+ENV LD_LIBRARY_PATH=
 
 ENTRYPOINT ["/app/llama.cpp/build-cuda/bin/llama-server"]
