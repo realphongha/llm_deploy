@@ -10,7 +10,7 @@ docker run --gpus all --rm -it \
     --network=host \
     --name llama-cpp-gemma4-26b \
     $image \
-    -hf $model --no-mmproj \
+    -hf $model \
     --host 0.0.0.0 --port $port \
     -c 524288 -np 4 -cb -b 8192 -ub 2048 -fa on --mlock --threads 8 --n-gpu-layers 999 \
     --cache-type-k bf16 --cache-type-v bf16 \

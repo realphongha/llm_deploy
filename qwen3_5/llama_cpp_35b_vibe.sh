@@ -9,7 +9,7 @@ docker run --gpus '"device=2"' --rm -it \
     --network=host \
     --name llama-cpp-qwen3.5-35b \
     $image \
-    -hf $model --no-mmproj \
+    -hf $model \
     --host 0.0.0.0 --port $port \
     -c 65536 -np 1 -fa on --mlock --threads 16 --n-gpu-layers 999 \
     -b 4096 -ub 4096 --cache-type-k q8_0 --cache-type-v q8_0 \

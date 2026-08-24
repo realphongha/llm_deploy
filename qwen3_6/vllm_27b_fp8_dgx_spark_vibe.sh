@@ -18,5 +18,5 @@ docker run --gpus all --rm -it \
     --reasoning-parser qwen3 \
     --speculative-config '{"method":"mtp","num_speculative_tokens":3}' \
     --moe-backend flashinfer_b12x \
-    --language-model-only
+    # --language-model-only
     # --limit-mm-per-prompt '{"video": 1}' \
