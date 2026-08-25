@@ -8,7 +8,7 @@ docker run --rm \
     --ulimit memlock=-1:-1 \
     -v ./llama.cpp:/app \
     --runtime=nvidia \
-    -v /mnt/ssd1t/phonghh/.cache:/root/.cache \
+    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
     --network=host \
     -it $image \
     llama-server \

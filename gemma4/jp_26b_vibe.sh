@@ -10,7 +10,7 @@ docker run --rm \
     -v ./llama.cpp:/app \
     -v ./gemma4:/gemma4 \
     --runtime=nvidia \
-    -v /mnt/ssd1t/phonghh/.cache:/root/.cache \
+    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
     --network=host \
     -it $image \
     llama-server \

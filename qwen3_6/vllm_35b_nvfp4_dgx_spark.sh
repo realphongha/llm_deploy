@@ -2,7 +2,7 @@ image=vllm/vllm-openai:nightly
 model=nvidia/Qwen3.6-35B-A3B-NVFP4
 port=8008
 docker run --gpus all --rm -it \
-    -v ~/.cache/huggingface:/root/.cache/huggingface \
+    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
     --env "HF_TOKEN=$HF_TOKEN" \
     --env VLLM_USE_FLASHINFER_MOE_FP4=0 \
     --env VLLM_FP8_MOE_BACKEND=flashinfer_cutlass \
