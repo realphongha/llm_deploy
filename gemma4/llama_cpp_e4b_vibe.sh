@@ -3,13 +3,13 @@ port=8003
 model=unsloth/gemma-4-E4B-it-GGUF:Q5_K_M
 docker run --gpus all --rm -it \
     --ulimit memlock=-1:-1 \
-    -v ~/.cache:/root/.cache \
+    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
     --network=host \
     --name llama-cpp-gemma4-e4b \
     $image \
-    -hf $model --no-mmproj \
+    -hf $model \
     --host 0.0.0.0 --port $port \
     -c 65536 -np 1 -b 4096 -ub 4096 -fa on --mlock --threads 8 --n-gpu-layers 999 \
     --cache-type-k q8_0 --cache-type-v q8_0 \

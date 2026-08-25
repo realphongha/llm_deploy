@@ -2,7 +2,7 @@ image=vllm/vllm-openai
 model=Qwen/Qwen3.5-35B-A3B-FP8
 port=8008
 docker run --gpus all --rm -it \
-    -v ~/.cache/huggingface:/root/.cache/huggingface \
+    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
     --env "HF_TOKEN=$HF_TOKEN" \
     --network=host \
     $image $model \

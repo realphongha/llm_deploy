@@ -3,7 +3,7 @@ port=8002
 model=unsloth/DeepSeek-V4-Flash-GGUF:UD-IQ3_XXS
 docker run --gpus all --rm -it \
     --ulimit memlock=-1:-1 \
-    -v ~/.cache:/root/.cache \
+    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
     --network=host \

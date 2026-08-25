@@ -4,13 +4,13 @@ model=unsloth/Qwen3.5-122B-A10B-MTP-GGUF:UD-Q5_K_XL
 # --ulimit memlock=-1:-1 \
 docker run --gpus all --rm -it \
     --ulimit memlock=-1:-1 \
-    -v ~/.cache:/root/.cache \
+    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
     --network=host \
     --name llama-cpp-qwen3.5-122b \
     $image \
-    -hf $model --no-mmproj \
+    -hf $model \
     --host 0.0.0.0 --port $port \
     -c 262144 -np 1 -fa on --mlock --threads 8 --n-gpu-layers 999 \
     -b 2048 -ub 2048 --cache-type-k bf16 --cache-type-v bf16 \
