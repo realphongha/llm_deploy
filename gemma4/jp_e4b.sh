@@ -1,6 +1,6 @@
 # from ./llm_deploy
 image=my-l4t-jetpack:ffmpeg
-model=unsloth/gemma-4-E4B-it-GGUF:Q4_K_M
+model=unsloth/gemma-4-E4B-it-qat-GGUF:UD-Q4_K_XL
 docker run --rm \
     --env PATH="/app/llama.cpp/build-cuda/bin:$PATH" \
     --env LD_LIBRARY_PATH="/app/llama.cpp/build-cuda/bin:$LD_LIBRARY_PATH" \
