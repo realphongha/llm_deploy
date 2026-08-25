@@ -158,6 +158,7 @@ def proxy_chat(target_api_base, target_model, body, stream,
         "Content-Type": "application/json",
     }
     body = dict(body)
+
     body["model"] = target_model
     # Merge options (top-level API params like temperature)
     if options:
@@ -203,6 +204,22 @@ def chat_completions():
     real_model, backend, api_key, opts, extra = resolve_model(incoming)
     return proxy_chat(backend, real_model, data, stream, api_key, opts, extra)
 
+@app.route("/v1/models", methods=["GET"])
+def list_models():
+    """Local model list — the aliases from model_map.yaml, so clients can
+       discover 'smart', 'fast', 'oracle' without hitting any backend."""
+    conf = _load_model_map()
+    models = []
+    for alias, entry in conf.get("models", {}).items():
+        models.append({
+            "id": alias,
+            "object": "model",
+            "created": 0,
+            "owned_by": "proxy",
+        })
+    return jsonify({"object": "list", "data": models})
+
+
 @app.route("/v1/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"])
 def proxy_all(path):
     url = f"{_default_api_base()}/{path}"
@@ -212,15 +229,19 @@ def proxy_all(path):
     if request.method in ("POST", "PUT", "PATCH"):
         headers["Content-Type"] = "application/json"
 
-    resp = requests.request(
-        method=request.method,
-        url=url,
-        headers=headers,
-        params=request.args,
-        data=request.get_data(),
-        stream=True,
-        timeout=300,
-    )
+    try:
+        resp = requests.request(
+            method=request.method,
+            url=url,
+            headers=headers,
+            params=request.args,
+            data=request.get_data(),
+            stream=True,
+            timeout=300,
+        )
+    except requests.RequestException as e:
+        logging.warning("Backend %s unreachable: %s", url, e)
+        return jsonify({"error": f"backend unreachable: {e}"}), 502
 
     excluded_headers = {"content-encoding", "content-length", "transfer-encoding", "connection"}
     resp_headers = [(k, v) for k, v in resp.headers.items() if k.lower() not in excluded_headers]
