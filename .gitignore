@@ -1,3 +1,7 @@
 .webui_secret_key
 *.log*
 model_map.yaml
+
+# Python
+__pycache__/
+*.pyc
