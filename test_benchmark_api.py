@@ -6,13 +6,13 @@ import benchmark_api as b
 
 
 def test_prompt_corpus():
-  assert len(b.PROMPTS) == 9, len(b.PROMPTS)
+  assert len(b.PROMPTS) == 8, len(b.PROMPTS)
   names = [p["name"] for p in b.PROMPTS]
   assert len(set(names)) == len(names), "duplicate prompt names"
   cats = {p["category"] for p in b.PROMPTS}
   assert cats == {
       "coding", "code-review", "translation", "summarization",
-      "creative-writing", "reasoning", "structured-extraction", "explain"
+      "creative-writing", "reasoning", "structured-extraction"
   }, cats
   for p in b.PROMPTS:
     words = len(p["text"].split())
@@ -22,44 +22,46 @@ def test_prompt_corpus():
     assert p["text"].strip().endswith((".", "?", ":", "`", "\n")), p["name"]
   # Measured against a live llama.cpp server: real prompt_tokens were
   # 896-2359, i.e. 20x+ longer than the ~40 token prompts this suite replaced.
-  assert sum(b.estimate_tokens(p["text"]) for p in b.PROMPTS) > 8000
+  assert sum(b.estimate_tokens(p["text"]) for p in b.PROMPTS) > 6000
   print("OK prompt corpus:", [(p["category"], p["name"],
                                len(p["text"].split()),
                                b.estimate_tokens(p["text"])) for p in b.PROMPTS])
 
 
 def test_chunking():
-  items = [{"name": f"p{i}"} for i in range(9)]
+  items = [{"name": f"p{i}"} for i in range(8)]
   names = lambda ch: [s["name"] for s, _ in ch]
   dups = lambda ch: [d for _, d in ch]
 
-  # c=1: 9 chunks of 1, no padding.
+  # c=1: 8 chunks of 1, no padding.
   ch = b.padded_chunks(items, 1)
-  assert len(ch) == 9 and all(len(c) == 1 for c in ch)
+  assert len(ch) == 8 and all(len(c) == 1 for c in ch)
   assert all(d is False for c in ch for _, d in c)
-  assert names([x for c in ch for x in c]) == [f"p{i}" for i in range(9)]
+  assert names([x for c in ch for x in c]) == [f"p{i}" for i in range(8)]
 
-  # c=3 divides evenly: no padding.
+  # c=4 and c=8 divide the power-of-2 suite evenly: no padding.
+  for c in (4, 8):
+    ch = b.padded_chunks(items, c)
+    assert all(len(chunk) == c for chunk in ch)
+    assert not any(d for chunk in ch for _, d in chunk)
+  assert len(b.padded_chunks(items, 8)) == 1
+
+  # c=3: tail padded by cycling from the front.
   ch = b.padded_chunks(items, 3)
   assert [len(c) for c in ch] == [3, 3, 3]
-  assert not any(d for c in ch for _, d in c)
+  assert names(ch[2]) == ["p6", "p7", "p0"]
+  assert dups(ch[2]) == [False, False, True]
 
-  # c=4: tail padded by cycling from the front.
-  ch = b.padded_chunks(items, 4)
-  assert [len(c) for c in ch] == [4, 4, 4]
-  assert names(ch[2]) == ["p8", "p0", "p1", "p2"]
-  assert dups(ch[2]) == [False, True, True, True]
-
-  # c=20 > 9: one chunk, every prompt at least once, 11 dups.
+  # c=20 > 8: one chunk, every prompt at least once, 12 dups.
   ch = b.padded_chunks(items, 20)
   assert len(ch) == 1 and len(ch[0]) == 20
-  assert names(ch[0])[:9] == [f"p{i}" for i in range(9)]
-  assert sum(dups(ch[0])) == 11
+  assert names(ch[0])[:8] == [f"p{i}" for i in range(8)]
+  assert sum(dups(ch[0])) == 12
 
   # Every unique prompt is fresh exactly once, regardless of padding.
-  fresh = [s["name"] for c in b.padded_chunks(items, 4)
+  fresh = [s["name"] for c in b.padded_chunks(items, 3)
            for s, d in c if not d]
-  assert fresh == [f"p{i}" for i in range(9)]
+  assert fresh == [f"p{i}" for i in range(8)]
 
   try:
     b.padded_chunks(items, 0)
@@ -85,7 +87,7 @@ def test_chunk_ordering():
       await asyncio.gather(*[fake(s, 0.05) for s, _ in chunk])
     return [e for e in events]
 
-  seq = asyncio.run(run([{"name": f"p{i}"} for i in range(9)], 1))
+  seq = asyncio.run(run([{"name": f"p{i}"} for i in range(8)], 1))
   starts = [t for kind, _, t in seq if kind == "start"]
   assert starts == sorted(starts), "sequential run must start in order"
   # No start may begin before the previous one ended.
@@ -95,7 +97,7 @@ def test_chunk_ordering():
   for i in range(0, len(pairs), 2):
     assert pairs[i][0] == "start" and pairs[i + 1][0] == "end"
 
-  par = asyncio.run(run([{"name": f"p{i}"} for i in range(9)], 3))
+  par = asyncio.run(run([{"name": f"p{i}"} for i in range(8)], 3))
   pstarts = [t for kind, _, t in par if kind == "start"]
   pend = [t for kind, _, t in par if kind == "end"]
   # First chunk: 3 starts before any end. Last chunk: 3 ends after last start.

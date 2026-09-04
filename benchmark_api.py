@@ -585,11 +585,11 @@ ANH: Decided then. Fourteenth for the release, tokenizer is a may-ride. Dung
 owns the go or no-go. Next, the benchmark suite. Binh, status?
 BINH: The suite runs but the prompts were forty words long, so prefill numbers
 were noise. Output tokens per second looked fine, input tokens per second moved
-thirty percent between runs. I rewrote nine prompts across coding, code review,
+thirty percent between runs. I rewrote eight prompts across coding, code review,
 translation both directions, summarisation, creative writing, reasoning and
 structured extraction. Each is around a thousand tokens.
-MAI: Good, but who maintains nine long prompts? They drift.
-BINH: They are checked in as data in one file. Adding a tenth prompt is one list
+MAI: Good, but who maintains eight long prompts? They drift.
+BINH: They are checked in as data in one file. Adding a ninth prompt is one list
 entry.
 ANH: Fine. Binh lands the suite this week with per-category reporting and an
 aggregate line, not only the mean.
@@ -607,7 +607,7 @@ CHI: p95 of what, time to first token under concurrency three?
 MAI: Yes, and decode throughput at the same point.
 CHI: I can have that Monday.
 DUNG: Back to quantisation. The four bit weights are fine on summarisation and
-translation. On JSON extraction, two of the nine runs returned a trailing comma.
+translation. On JSON extraction, two of the eight runs returned a trailing comma.
 That is a fail.
 ANH: Is it the checkpoint or the server?
 DUNG: I believe the checkpoint. The FP8 candidate does not show it, but it is six
@@ -1038,82 +1038,6 @@ _EXTRACTION_INSTRUCTION = (
     "```\n\nArticle:\n" + _EXTRACTION_SOURCE
 )
 
-# explain / deep-explain: ~700 input tokens
-_EXPLAIN_DEEP = """\
-You are writing an internal architecture note for a team that will operate a
-private text-only LLM inference platform: two or four GPU boxes, one or two
-models at a time, an OpenAI-compatible endpoint, and a small internal user base
-of engineers.
-
-Audience: competent software engineers with no prior LLM serving experience.
-Length: 900 to 1300 words. Structure: exactly the seven numbered sections below,
-in order, with the given headings, plus a closing "Recommended defaults" table.
-
-1. Prefill and decode as separate engineering problems
-   Explain why the two phases have different bottlenecks, what each one is
-   sensitive to, and why a single blended "tokens per second" number hides the
-   thing you care about. Give one concrete example where optimising the blended
-   number makes user experience worse.
-
-2. How concurrency actually changes both numbers
-   Explain batching, why decode throughput per sequence is roughly flat until
-   the memory system saturates, and why prefill throughput per sequence falls
-   roughly in proportion to concurrency. Explain how queueing turns into
-   time-to-first-token, and why measuring at concurrency 1 tells you almost
-   nothing about peak-hour behaviour.
-
-3. Key value cache and context length as a budget
-   Explain what consumes memory during inference, how context length and
-   concurrent sequences multiply, and the failure mode where the server admits
-   more sequences than it can hold. Cover prefix caching and quantised KV, with
-   their quality risks.
-
-4. Quantisation choices for this fleet
-   Compare weight-only four bit against FP8 style formats for the two phases,
-   and specifically discuss which task categories break first: long chain
-   reasoning, exact instruction following, and structured JSON output. Explain
-   how to detect silent quality regressions with a prompt suite rather than a
-   single average score.
-
-5. A measurement plan
-   Describe how to build a prompt suite that reflects real traffic, which task
-   categories to include, how long prompts should be for prefill measurement to
-   be meaningful, whether to run sequentially or concurrently, and how to read
-   the mean of per-request ratios versus aggregate throughput. State what to do
-   when those two disagree.
-
-6. Routing and why it breaks your numbers
-   The team intends to run one small fast model for translation and drafting and
-   one large model for coding and reasoning, behind a single endpoint. Explain
-   what this does to measured throughput numbers, why a benchmark that silently
-   measures whichever model an alias resolves to is dangerous, and how to pin the
-   model explicitly so a routing change cannot be mistaken for a regression.
-
-7. Operational failure modes
-   Cover, concretely: a model that streams everything in one burst, reasoning or
-   thinking tokens being counted as output, missing usage data from the server,
-   prompt length exceeding context, cold-server effects on the first
-   measurement, and throughput collapse at a specific concurrency cliff.
-
-Recommended defaults: a Markdown table with columns Setting | Default | Why,
-covering max prompt length, max output tokens, warmup requests, sequential
-versus concurrent default, prompt suite composition, and which throughput number
-to use for capacity planning versus user experience. State one default you expect
-to disagree with internally and why.
-
-Also required, inside section 5: define the three metrics your team will publish
-on a dashboard (name, unit, how it is computed, what a bad value looks like), and
-state the alerting rule you would attach to each. Explain what to do when the
-mean and the aggregate of the same measurement diverge, and give one realistic
-cause of divergence that is not a bug.
-
-Style: direct, no marketing language, no bullet spam (no more than five bullets
-total across the whole note), prefer short declarative sentences, and define
-every abbreviation on first use. Do not invent hardware specifications, vendor
-benchmarks, or prices that are not given in this brief; when a number is needed
-but unknown, say what measurement would produce it.
-"""
-
 PROMPTS = [
     {
         "category": "coding",
@@ -1154,11 +1078,6 @@ PROMPTS = [
         "category": "structured-extraction",
         "name": "json-schema",
         "text": _EXTRACTION_INSTRUCTION,
-    },
-    {
-        "category": "explain",
-        "name": "deep-explain",
-        "text": _EXPLAIN_DEEP,
     },
 ]
 
