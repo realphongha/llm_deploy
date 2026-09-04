@@ -29,19 +29,44 @@ def test_prompt_corpus():
 
 
 def test_chunking():
-  items = list(range(9))
-  assert [len(c) for c in b.chunked(items, 1)] == [1] * 9
-  assert [len(c) for c in b.chunked(items, 3)] == [3, 3, 3]
-  assert [len(c) for c in b.chunked(items, 4)] == [4, 4, 1]
-  assert [len(c) for c in b.chunked(items, 20)] == [9]
-  flat = [x for c in b.chunked(items, 4) for x in c]
-  assert flat == items, "every item exactly once, order preserved"
+  items = [{"name": f"p{i}"} for i in range(9)]
+  names = lambda ch: [s["name"] for s, _ in ch]
+  dups = lambda ch: [d for _, d in ch]
+
+  # c=1: 9 chunks of 1, no padding.
+  ch = b.padded_chunks(items, 1)
+  assert len(ch) == 9 and all(len(c) == 1 for c in ch)
+  assert all(d is False for c in ch for _, d in c)
+  assert names([x for c in ch for x in c]) == [f"p{i}" for i in range(9)]
+
+  # c=3 divides evenly: no padding.
+  ch = b.padded_chunks(items, 3)
+  assert [len(c) for c in ch] == [3, 3, 3]
+  assert not any(d for c in ch for _, d in c)
+
+  # c=4: tail padded by cycling from the front.
+  ch = b.padded_chunks(items, 4)
+  assert [len(c) for c in ch] == [4, 4, 4]
+  assert names(ch[2]) == ["p8", "p0", "p1", "p2"]
+  assert dups(ch[2]) == [False, True, True, True]
+
+  # c=20 > 9: one chunk, every prompt at least once, 11 dups.
+  ch = b.padded_chunks(items, 20)
+  assert len(ch) == 1 and len(ch[0]) == 20
+  assert names(ch[0])[:9] == [f"p{i}" for i in range(9)]
+  assert sum(dups(ch[0])) == 11
+
+  # Every unique prompt is fresh exactly once, regardless of padding.
+  fresh = [s["name"] for c in b.padded_chunks(items, 4)
+           for s, d in c if not d]
+  assert fresh == [f"p{i}" for i in range(9)]
+
   try:
-    b.chunked(items, 0)
+    b.padded_chunks(items, 0)
   except ValueError:
     pass
   else:
-    raise AssertionError("chunked(size=0) must raise")
+    raise AssertionError("padded_chunks(size=0) must raise")
   print("OK chunking")
 
 
@@ -56,8 +81,8 @@ def test_chunk_ordering():
 
   async def run(specs, c):
     events.clear()
-    for chunk in b.chunked(specs, c):
-      await asyncio.gather(*[fake(s, 0.05) for s in chunk])
+    for chunk in b.padded_chunks(specs, c):
+      await asyncio.gather(*[fake(s, 0.05) for s, _ in chunk])
     return [e for e in events]
 
   seq = asyncio.run(run([{"name": f"p{i}"} for i in range(9)], 1))

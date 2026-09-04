@@ -1180,6 +1180,7 @@ class RequestResult:
   failed: bool = False
   error: str = ""
   burst_capped: bool = False
+  dup: bool = False
 
 
 def cache_bust(prompt_spec: dict) -> dict:
@@ -1204,11 +1205,25 @@ def estimate_tokens(text: str) -> int:
   return max(1, int(len(text.split()) * WORDS_TO_TOKENS))
 
 
-def chunked(items: list, size: int) -> list:
-  """Split items into consecutive chunks of at most `size` elements."""
+def padded_chunks(specs: list, size: int) -> list:
+  """Split the suite into consecutive chunks of exactly `size` requests.
+
+  The tail chunk is padded by cycling from the front of the suite so every
+  chunk fires the full `--concurrency` in flight at once; otherwise the tail
+  would measure under lower load and its TTFT would not be comparable.
+  Padding entries are flagged as duplicates. When `size` exceeds the suite
+  length this yields a single chunk of `size` with every prompt run at
+  least once.
+  Returns a list of chunks; each chunk is a list of (spec, is_duplicate).
+  """
   if size < 1:
     raise ValueError("chunk size must be >= 1")
-  return [items[i:i + size] for i in range(0, len(items), size)]
+  chunks = []
+  for start in range(0, len(specs), size):
+    fresh = specs[start:start + size]
+    pad = [specs[i % len(specs)] for i in range(size - len(fresh))]
+    chunks.append([(s, False) for s in fresh] + [(s, True) for s in pad])
+  return chunks
 
 
 async def fetch_first_model(client: AsyncOpenAI) -> str:
@@ -1247,6 +1262,7 @@ async def benchmark_single_request(
   category = prompt_spec["category"]
   name = prompt_spec["name"]
   prompt = prompt_spec["text"]
+  dup = bool(prompt_spec.get("dup", False))
 
   t_start = time.perf_counter()
   t_first = None      # arrival time of first content token
@@ -1333,6 +1349,7 @@ async def benchmark_single_request(
         gen_tokens=gen_tokens,
         output_tps=output_tps,
         burst_capped=burst_capped,
+        dup=dup,
     )
 
   except Exception as e:
@@ -1349,6 +1366,7 @@ async def benchmark_single_request(
         output_tps=0.0,
         failed=True,
         error=str(e),
+        dup=dup,
     )
 
 
@@ -1373,7 +1391,8 @@ def print_report(results: list, verbose: bool = False) -> int:
       # A trailing ~ marks a row where the server returned no usage data and
       # prompt_tokens is a word-count estimate.
       tok_cell = f"{r.prompt_tokens}{'~' if not r.usage_ok else ''}"
-      flag = " ⚡burst" if r.burst_capped else ""
+      flag = ((" (dup)" if r.dup else "")
+              + (" ⚡burst" if r.burst_capped else ""))
       print(
           f"{r.category:<23}{r.name:<17}{tok_cell:>10}"
           f"{r.ttft_ms:>10.2f}{r.input_tps:>12.2f}"
@@ -1430,6 +1449,9 @@ def print_report(results: list, verbose: bool = False) -> int:
 
   print("-" * 80)
   print(f"✅ Requests OK     : {count} / {len(results)}")
+  dup_count = sum(1 for r in results if r.dup)
+  if dup_count:
+    print(f"🔁 Duplicates      : {dup_count} padded to hold full chunks")
   print(f"⚡ Avg TTFT        : {avg_ttft:.2f} ms")
   print(f"📥 Avg Input TPS   : {avg_in_tps:.2f} tok/s")
   print(f"📤 Avg Output TPS  : {avg_out_tps:.2f} tok/s")
@@ -1516,9 +1538,11 @@ async def main():
       "--concurrency", "-c",
       type=int,
       default=1,
-      help="Prompts fired at once. The full suite is run in consecutive "
-           "chunks of this size until every prompt has been measured once "
-           "(default: 1, i.e. strictly sequential)",
+      help="Requests fired at once. The suite is run in consecutive chunks "
+           "of exactly this size: short tails and sizes beyond the suite "
+           "length are padded by cycling prompts from the front (marked "
+           "dup), so every chunk measures under the same concurrency "
+           "(default: 1, i.e. strictly sequential, no padding)",
   )
   parser.add_argument(
       "--max-tokens",
@@ -1570,14 +1594,22 @@ async def main():
   if not model_name:
     model_name = await fetch_first_model(client)
 
-  chunks = chunked(PROMPTS, args.concurrency)
+  chunks = padded_chunks(PROMPTS, args.concurrency)
+  total_requests = sum(len(chunk) for chunk in chunks)
+  dup_requests = sum(1 for chunk in chunks for _, is_dup in chunk if is_dup)
   print(f"\n🚀 Starting Benchmark against: {args.url}")
   print(
-      f"📊 Model: {model_name} | Prompts: {len(PROMPTS)} in "
-      f"{len(chunks)} chunk(s) of {args.concurrency} | Max Tokens:"
-      f" {args.max_tokens} | Warmup: {args.warmup} | Cache bust:"
-      f" {'on' if args.cache_bust else 'off'}\n"
+      f"📊 Model: {model_name} | Suite: {len(PROMPTS)} prompts, "
+      f"{total_requests} requests in {len(chunks)} chunk(s) of "
+      f"{args.concurrency} | Max Tokens: {args.max_tokens} | Warmup: "
+      f"{args.warmup} | Cache bust: {'on' if args.cache_bust else 'off'}\n"
   )
+  if dup_requests:
+    print(
+        f"🔁 {dup_requests} duplicate request(s): the suite is smaller than "
+        f"the chunk size, so prompts cycle from the front to keep every "
+        f"chunk at exactly {args.concurrency} concurrent request(s)."
+    )
   if not args.cache_bust:
     print(
         "ℹ️ --no-cache-bust: repeating this run may report inflated input "
@@ -1597,16 +1629,23 @@ async def main():
   interrupted = False
   try:
     for index, chunk in enumerate(chunks, start=1):
-      print(
-          f"▶ Chunk {index}/{len(chunks)}: "
-          + ", ".join(spec["name"] for spec in chunk)
-      )
-      specs = ([cache_bust(spec) for spec in chunk] if args.cache_bust
-               else chunk)
+      names = [
+          spec["name"] + (" (dup)" if is_dup else "")
+          for spec, is_dup in chunk
+      ]
+      print(f"▶ Chunk {index}/{len(chunks)}: " + ", ".join(names))
+      request_specs = []
+      for spec, is_dup in chunk:
+        request = dict(spec, dup=is_dup)
+        if args.cache_bust:
+          # Each duplicate gets its own nonce, so padding measures true
+          # parallel cold prefill rather than a shared cached prefix.
+          request = cache_bust(request)
+        request_specs.append(request)
       batch = await asyncio.gather(
           *[
               benchmark_single_request(client, spec, model_name, args.max_tokens)
-              for spec in specs
+              for spec in request_specs
           ]
       )
       results.extend(batch)
