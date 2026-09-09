@@ -11,7 +11,7 @@ docker run --gpus all --rm -it \
     --tensor-parallel-size 1 \
     --enable-chunked-prefill --async-scheduling --max-num-batched-tokens 8192 \
     --enable-prefix-caching \
-    --max-model-len 4096 --max-num-seqs 8 --gpu-memory-utilization 0.3 \
+    --max-model-len 8192 --max-num-seqs 8 --gpu-memory-utilization 0.3 \
     --language-model-only \
     --speculative-config '{"model":"google/gemma-4-E4B-it-assistant","num_speculative_tokens":4}' \
     # --max-model-len 32768 --max-num-seqs 16 --gpu-memory-utilization 0.8 \
