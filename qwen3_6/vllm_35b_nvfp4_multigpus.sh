@@ -2,7 +2,10 @@ image=vllm/vllm-openai:nightly
 model=nvidia/Qwen3.6-35B-A3B-NVFP4
 port=8089
 docker run --gpus '"device=1,3"' --rm -it \
-    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
+    --user "$(id -u):$(id -g)" \
+    --env HOME=$HOME \
+    -v $(readlink -f ~/.docker-home):$HOME \
+    -v $(readlink -f ~/.cache/huggingface):$HOME/.cache/huggingface \
     -p $port:$port \
     --env "HF_TOKEN=$HF_TOKEN" \
     $image $model --port $port \

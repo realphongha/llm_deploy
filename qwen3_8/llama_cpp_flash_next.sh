@@ -4,13 +4,16 @@ model=unsloth/Qwen3.8-Flash-Next-GGUF:UD-IQ4_XS
 # --gpus '"device=2"'
 # --ulimit memlock=-1:-1 --load-mode mlock \
 docker run --gpus all --rm -it \
-    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
+    --user "$(id -u):$(id -g)" \
+    --env HOME=$HOME \
+    -v $(readlink -f ~/.docker-home):$HOME \
+    -v $(readlink -f ~/.cache/huggingface):$HOME/.cache/huggingface \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
     --name llama-cpp-qwen3.8-flash-next \
     $image \
     -hf $model \
-    -md /root/.cache/huggingface/hub/models--unsloth--Qwen3.8-Flash-Next-GGUF/snapshots/38bb39ee97821de2c9009abb7e93950eec396e66/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf \
+    -md $HOME/.cache/huggingface/hub/models--unsloth--Qwen3.8-Flash-Next-GGUF/snapshots/38bb39ee97821de2c9009abb7e93950eec396e66/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf \
     --host 0.0.0.0 --port $port \
     -c 262144 -np 1 -cb -fa on --threads 4 --n-gpu-layers 999 \
     -b 2048 -ub 2048 --cache-type-k q8_0 --cache-type-v q8_0 \

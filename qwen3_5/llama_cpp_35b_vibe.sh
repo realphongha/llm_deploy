@@ -3,7 +3,10 @@ port=8000
 model=unsloth/Qwen3.5-35B-A3B-GGUF:MXFP4_MOE
 # --ulimit memlock=-1:-1 \
 docker run --gpus '"device=2"' --rm -it \
-    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
+    --user "$(id -u):$(id -g)" \
+    --env HOME=$HOME \
+    -v $(readlink -f ~/.docker-home):$HOME \
+    -v $(readlink -f ~/.cache/huggingface):$HOME/.cache/huggingface \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
     --network=host \

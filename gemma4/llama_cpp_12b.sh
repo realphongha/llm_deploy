@@ -3,7 +3,10 @@ port=8007
 model=unsloth/gemma-4-12B-it-qat-GGUF:UD-Q4_K_XL
     # --ulimit memlock=-1:-1 \
 docker run --gpus '"device=2"' --rm -it \
-    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
+    --user "$(id -u):$(id -g)" \
+    --env HOME=$HOME \
+    -v $(readlink -f ~/.docker-home):$HOME \
+    -v $(readlink -f ~/.cache/huggingface):$HOME/.cache/huggingface \
     -v ./gemma4:/gemma4 \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \

@@ -2,8 +2,11 @@ image=llama-cpp
 port=8000
 model=unsloth/Qwen3.5-35B-A3B-GGUF:MXFP4_MOE
 docker run --gpus all --rm -it \
+    --user "$(id -u):$(id -g)" \
+    --env HOME=$HOME \
     --ulimit memlock=-1:-1 \
-    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
+    -v $(readlink -f ~/.docker-home):$HOME \
+    -v $(readlink -f ~/.cache/huggingface):$HOME/.cache/huggingface \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
     --network=rl \

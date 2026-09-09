@@ -2,7 +2,10 @@ image=vllm/vllm-openai
 port=8003
 model=google/gemma-4-E4B-it-qat-w4a16-ct
 docker run --gpus all --rm -it \
-    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
+    --user "$(id -u):$(id -g)" \
+    --env HOME=$HOME \
+    -v $(readlink -f ~/.docker-home):$HOME \
+    -v $(readlink -f ~/.cache/huggingface):$HOME/.cache/huggingface \
     --env "HF_TOKEN=$HF_TOKEN" \
     -p $port:$port \
     $image $model \

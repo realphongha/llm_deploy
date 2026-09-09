@@ -3,13 +3,16 @@ image=my-l4t-jetpack:ffmpeg
 model=unsloth/gemma-4-E4B-it-qat-GGUF:UD-Q4_K_XL
 port=8008
 docker run --rm \
+    --user "$(id -u):$(id -g)" \
+    --env HOME=$HOME \
     --env PATH="/app/llama.cpp/build-cuda/bin:$PATH" \
     --env LD_LIBRARY_PATH="/app/llama.cpp/build-cuda/bin:$LD_LIBRARY_PATH" \
     --env "HF_TOKEN=$HF_TOKEN" \
     --ulimit memlock=-1:-1 \
     -v ./llama.cpp:/app \
     -v ./gemma4:/gemma4 \
-    -v $(readlink -f ~/.cache/huggingface):/root/.cache/huggingface \
+    -v $(readlink -f ~/.docker-home):$HOME \
+    -v $(readlink -f ~/.cache/huggingface):$HOME/.cache/huggingface \
     --runtime=nvidia \
     -p $port:$port \
     -it $image \
