@@ -1,9 +1,11 @@
+#!/usr/bin/env bash
 image=llama-cpp
 port=8002
 model=unsloth/Qwen3.6-35B-A3B-GGUF:MXFP4_MOE
 # --ulimit memlock=-1:-1 \
+source "$(dirname "$0")/../lib/docker_user.sh"
 docker run --gpus all --rm -it \
-    --user "$(id -u):$(id -g)" \
+    "${docker_user_flag[@]}" \
     --env HOME=$HOME \
     --ulimit memlock=-1:-1 \
     -v $(readlink -f ~/.docker-home):$HOME \

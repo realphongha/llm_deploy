@@ -1,8 +1,10 @@
+#!/usr/bin/env bash
 image=vllm/vllm-openai
 port=8003
 model=nvidia/Gemma-4-26B-A4B-NVFP4
+source "$(dirname "$0")/../lib/docker_user.sh"
 docker run --gpus all --rm -it \
-    --user "$(id -u):$(id -g)" \
+    "${docker_user_flag[@]}" \
     --env HOME=$HOME \
     -v $(readlink -f ~/.docker-home):$HOME \
     -v $(readlink -f ~/.cache/huggingface):$HOME/.cache/huggingface \

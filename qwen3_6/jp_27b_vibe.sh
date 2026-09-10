@@ -1,9 +1,11 @@
+#!/usr/bin/env bash
 # from ./llm_deploy
 model=unsloth/Qwen3.6-27B-GGUF:Q4_K_M
 image=my-l4t-jetpack:ffmpeg
 port=8008
+source "$(dirname "$0")/../lib/docker_user.sh"
 docker run --rm \
-    --user "$(id -u):$(id -g)" \
+    "${docker_user_flag[@]}" \
     --env HOME=$HOME \
     --env PATH="/app/llama.cpp/build-cuda/bin:$PATH" \
     --env LD_LIBRARY_PATH="/app/llama.cpp/build-cuda/bin:$LD_LIBRARY_PATH" \

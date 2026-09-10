@@ -1,10 +1,12 @@
+#!/usr/bin/env bash
 image=llama-cpp
 port=8007
 model=unsloth/Qwen3.8-Flash-Next-GGUF:UD-IQ4_XS
 # --gpus '"device=2"'
 # --ulimit memlock=-1:-1 --load-mode mlock \
+source "$(dirname "$0")/../lib/docker_user.sh"
 docker run --gpus all --rm -it \
-    --user "$(id -u):$(id -g)" \
+    "${docker_user_flag[@]}" \
     --env HOME=$HOME \
     -v $(readlink -f ~/.docker-home):$HOME \
     -v $(readlink -f ~/.cache/huggingface):$HOME/.cache/huggingface \

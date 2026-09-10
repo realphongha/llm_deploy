@@ -1,8 +1,10 @@
+#!/usr/bin/env bash
 image=vllm/vllm-openai
 model=Qwen/Qwen3.6-27B-FP8
 port=8002
+source "$(dirname "$0")/../lib/docker_user.sh"
 docker run --gpus all --rm -it \
-    --user "$(id -u):$(id -g)" \
+    "${docker_user_flag[@]}" \
     --env HOME=$HOME \
     -v $(readlink -f ~/.docker-home):$HOME \
     -v $(readlink -f ~/.cache/huggingface):$HOME/.cache/huggingface \

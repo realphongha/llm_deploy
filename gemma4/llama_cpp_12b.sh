@@ -1,9 +1,11 @@
+#!/usr/bin/env bash
 image=llama-cpp
 port=8007
 model=unsloth/gemma-4-12B-it-qat-GGUF:UD-Q4_K_XL
     # --ulimit memlock=-1:-1 \
+source "$(dirname "$0")/../lib/docker_user.sh"
 docker run --gpus '"device=2"' --rm -it \
-    --user "$(id -u):$(id -g)" \
+    "${docker_user_flag[@]}" \
     --env HOME=$HOME \
     -v $(readlink -f ~/.docker-home):$HOME \
     -v $(readlink -f ~/.cache/huggingface):$HOME/.cache/huggingface \

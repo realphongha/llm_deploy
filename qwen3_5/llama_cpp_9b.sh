@@ -1,8 +1,10 @@
+#!/usr/bin/env bash
 image=llama-cpp
 port=8007
 model=unsloth/Qwen3.5-9B-GGUF:Q4_K_M
+source "$(dirname "$0")/../lib/docker_user.sh"
 docker run --gpus '"device=2"' --rm -it \
-    --user "$(id -u):$(id -g)" \
+    "${docker_user_flag[@]}" \
     --env HOME=$HOME \
     -v $(readlink -f ~/.docker-home):$HOME \
     -v $(readlink -f ~/.cache/huggingface):$HOME/.cache/huggingface \
