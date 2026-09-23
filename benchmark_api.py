@@ -21,6 +21,7 @@ Two measurement traps this script handles explicitly:
 Usage:
     python benchmark_api.py --url http://127.0.0.1:8007/v1
     python benchmark_api.py --url http://127.0.0.1:8008/v1 --model smart -c 3
+    python benchmark_api.py --url http://127.0.0.1:8007/v1 -cs 32768
     python benchmark_api.py --list-prompts
 """
 
@@ -43,6 +44,19 @@ WORDS_TO_TOKENS = 1.3
 
 # Sent before measurement so cold-server state does not skew the first prompt.
 WARMUP_PROMPT = "Reply with exactly one word: ready"
+
+# One filler line for --context-size padding, plus the header/footer wrapped
+# around the filler block. The counter keeps every line unique so repeated
+# filler does not merge into fewer tokens under BPE.
+_PAD_LINE = (
+    "Padding line {n:05d}: ordinary filler sentences keep the tokenizer"
+    " busy and the benchmark harness ignores this text."
+)
+_PAD_HEADER = (
+    "\n\n[The block below is measurement filler padding to reach a target"
+    " context size. Ignore it entirely and answer the task above.]\n"
+)
+_PAD_FOOTER = "[End of padding block.]\n"
 
 
 # --------------------------------------------------------------------------
@@ -1100,6 +1114,7 @@ class RequestResult:
   error: str = ""
   burst_capped: bool = False
   dup: bool = False
+  padded: bool = False
 
 
 def cache_bust(prompt_spec: dict) -> dict:
@@ -1120,8 +1135,31 @@ def cache_bust(prompt_spec: dict) -> dict:
 
 
 def estimate_tokens(text: str) -> int:
-  """Rough token estimate, used only for warnings and --list-prompts."""
+  """Rough token estimate, used for warnings, --list-prompts and padding."""
   return max(1, int(len(text.split()) * WORDS_TO_TOKENS))
+
+
+def pad_to_context(prompt_spec: dict, context_size: int) -> dict:
+  """Appends filler lines until the prompt reaches roughly `context_size`.
+
+  Uses the same word-count heuristic as estimate_tokens, so the result is
+  approximate: the real server tokenizer may land above or below the target
+  (and the --cache-bust nonce adds ~10 tokens too). Each filler line carries
+  a unique counter so BPE cannot merge repeated filler into fewer tokens.
+  Prompts already at or above the target are returned unpadded, flagged
+  with "pad_skipped": True.
+  """
+  est = estimate_tokens(prompt_spec["text"])
+  if est >= context_size:
+    return {**prompt_spec, "pad_skipped": True}
+  tokens_per_line = max(1, int(len(_PAD_LINE.split()) * WORDS_TO_TOKENS))
+  lines = (context_size - est + tokens_per_line - 1) // tokens_per_line
+  filler = "".join(_PAD_LINE.format(n=i) + "\n" for i in range(lines))
+  return {
+      **prompt_spec,
+      "text": prompt_spec["text"] + _PAD_HEADER + filler + _PAD_FOOTER,
+      "padded": True,
+  }
 
 
 def padded_chunks(specs: list, size: int) -> list:
@@ -1182,6 +1220,7 @@ async def benchmark_single_request(
   name = prompt_spec["name"]
   prompt = prompt_spec["text"]
   dup = bool(prompt_spec.get("dup", False))
+  padded = bool(prompt_spec.get("padded", False))
 
   t_start = time.perf_counter()
   t_first = None      # arrival time of first content token
@@ -1269,6 +1308,7 @@ async def benchmark_single_request(
         output_tps=output_tps,
         burst_capped=burst_capped,
         dup=dup,
+        padded=padded,
     )
 
   except Exception as e:
@@ -1286,6 +1326,7 @@ async def benchmark_single_request(
         failed=True,
         error=str(e),
         dup=dup,
+        padded=padded,
     )
 
 
@@ -1311,6 +1352,7 @@ def print_report(results: list, verbose: bool = False) -> int:
       # prompt_tokens is a word-count estimate.
       tok_cell = f"{r.prompt_tokens}{'~' if not r.usage_ok else ''}"
       flag = ((" (dup)" if r.dup else "")
+              + (" (pad)" if r.padded else "")
               + (" ⚡burst" if r.burst_capped else ""))
       print(
           f"{r.category:<23}{r.name:<17}{tok_cell:>10}"
@@ -1418,8 +1460,18 @@ def print_prompt_catalog() -> None:
   )
 
 
-def warn_context_length(max_tokens: int) -> None:
+def warn_context_length(max_tokens: int, context_size: int = 0) -> None:
   """Warns when prompt + generation budget may exceed the smallest context."""
+  if context_size:
+    # With --context-size the padded target replaces the per-prompt estimate.
+    if context_size + max_tokens > CONSERVATIVE_MAX_MODEL_LEN:
+      print(
+          f"⚠️ --context-size {context_size} + --max-tokens {max_tokens} may "
+          f"exceed {CONSERVATIVE_MAX_MODEL_LEN} tokens (conservative floor "
+          f"used by the smallest launcher in this repo). Padding is "
+          f"heuristic, so leave headroom or raise --max-model-len."
+      )
+    return
   offenders = [
       spec
       for spec in PROMPTS
@@ -1470,6 +1522,16 @@ async def main():
       help="Max generation tokens per prompt",
   )
   parser.add_argument(
+      "--context-size", "-cs",
+      type=int,
+      default=0,
+      help="Pad every prompt with numbered filler lines until its estimated "
+           "input reaches this many tokens (word-count heuristic, ~%.1f "
+           "tokens/word, so the real tokenised size is approximate). "
+           "Prompts already at or above the target are sent unpadded. "
+           "0 disables padding (default: 0)" % WORDS_TO_TOKENS,
+  )
+  parser.add_argument(
       "--warmup",
       type=int,
       default=1,
@@ -1506,6 +1568,23 @@ async def main():
     print("❌ --concurrency must be >= 1")
     return 1
 
+  if args.context_size < 0:
+    print("❌ --context-size must be >= 0")
+    return 1
+
+  if args.context_size:
+    too_long = [
+        f"{s['category']}/{s['name']}"
+        for s in PROMPTS
+        if estimate_tokens(s["text"]) >= args.context_size
+    ]
+    if too_long:
+      print(
+          f"ℹ️ --context-size {args.context_size}: these prompts are already "
+          f"at or above the target and will be sent unpadded: "
+          f"{', '.join(too_long)}"
+      )
+
   client = AsyncOpenAI(base_url=args.url, api_key=args.key)
 
   # Auto-resolve model if not explicitly provided
@@ -1534,7 +1613,12 @@ async def main():
         "ℹ️ --no-cache-bust: repeating this run may report inflated input "
         "TPS because the server serves cached prefixes."
     )
-  warn_context_length(args.max_tokens)
+  warn_context_length(args.max_tokens, args.context_size)
+  if args.context_size:
+    print(
+        f"📏 Context padding: every prompt padded to ~{args.context_size} "
+        f"input tokens (word heuristic; actual server token counts vary)"
+    )
 
   for i in range(args.warmup):
     await benchmark_single_request(
@@ -1560,6 +1644,9 @@ async def main():
           # Each duplicate gets its own nonce, so padding measures true
           # parallel cold prefill rather than a shared cached prefix.
           request = cache_bust(request)
+        if args.context_size:
+          # Pad after cache-bust so the nonce counts toward the target.
+          request = pad_to_context(request, args.context_size)
         request_specs.append(request)
       batch = await asyncio.gather(
           *[
