@@ -1,24 +1,10 @@
-# Build llama.cpp docker image
-- From `./llm_deploy/llama.cpp`
-- Access the container to build llama.cpp first:
+# Build llama.cpp docker image (Jetson AGX Orin)
+From `./llm_deploy/llama.cpp`:
 ```bash
-docker run --rm \
-    -v .:/app --runtime=nvidia \
-    -it nvcr.io/nvidia/l4t-jetpack:r36.4.0 bash
+bash build_jetson_agx_orin.sh
 ```
-
-- Inside the container:
-```bash
-apt-get update && apt-get install -y --no-install-recommends \
-    cmake build-essential curl ca-certificates pkg-config git \
-    libcurl4-openssl-dev libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
-cd /app && git clone --depth=1 --branch="master" https://github.com/ggml-org/llama.cpp && \
-    cd llama.cpp && \
-    cmake -B build-cuda -DGGML_CUDA=ON -DGGML_CUDA_F16=on -DLLAMA_CURL=on -DGGML_CUDA_FA_ALL_QUANTS=ON -DCMAKE_CUDA_ARCHITECTURES="87" -DLLAMA_OPENSSL=ON && \
-    cmake --build build-cuda -j4
-```
-The build directory should be at `./llm_deploy/llama.cpp/llama.cpp/build-cuda` now
+This produces the `llama-cpp-jetson` image (llama.cpp built with CUDA, SM 87, inside the image;
+entrypoint is `llama-server`). Edit `LLAMA_CPP_TAG` in the script to pick a branch/tag/commit/PR.
 
 # Run llama.cpp
-See `./gemma4/run_jetson_agx_orin.sh`
+See `./gemma4/jp_e4b.sh` (or any `jp_*.sh`)

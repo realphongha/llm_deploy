@@ -16,7 +16,7 @@ docker run --gpus all --rm -it \
     $image \
     -hf $model \
     --host 0.0.0.0 --port $port \
-    -c 131072 -np 8 -cb -b 2048 -ub 2048 -fa on --mlock --threads 8 --n-gpu-layers 999 \
+    -c 131072 -np 8 -cb -b 2048 -ub 2048 -fa on --threads 8 --n-gpu-layers 999 \
     --cache-type-k bf16 --cache-type-v bf16 \
     --temperature 0.3 --top_p 0.95 --top_k 64 --chat-template-kwargs '{"enable_thinking": false}' \
     --spec-type draft-mtp --spec-draft-n-max 2 \

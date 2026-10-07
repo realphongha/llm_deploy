@@ -17,7 +17,7 @@ docker run --gpus '"device=2"' --rm -it \
     -hf $model \
     --host 0.0.0.0 --port $port \
     --cache-type-k bf16 --cache-type-v bf16 \
-    -c 65536 -np 1 -b 8192 -ub 2048  -fa on --mlock --threads 8 --n-gpu-layers 999 \
+    -c 65536 -np 1 -b 8192 -ub 2048  -fa on --threads 8 --n-gpu-layers 999 \
     --temperature 1.0 --top_p 0.95 --top_k 64 \
     --chat-template-kwargs '{"enable_thinking":false}' \
     --image-max-tokens 280 \
