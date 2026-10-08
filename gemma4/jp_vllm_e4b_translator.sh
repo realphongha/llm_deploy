@@ -2,7 +2,7 @@
 # from ./llm_deploy
 # build the image first: cd vllm && bash build_vllm_jetson_agx_orin.sh
 image=vllm-jetson
-port=8003
+port=8008
 model=google/gemma-4-E4B-it-qat-w4a16-ct
 # Orin has unified memory: vllm's memory profiling over-counts non-torch usage and reports a negative
 # KV cache, so the KV size is set explicitly (--kv-cache-memory-bytes skips the profiling).
