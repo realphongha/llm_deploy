@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+image=llama-cpp
+port=8003
+model=unsloth/gemma-4-E2B-it-qat-GGUF:UD-Q4_K_XL
+    # --ulimit memlock=-1:-1 \
+source "$(dirname "$0")/../lib/docker_user.sh"
+docker run --gpus all --rm -it \
+    "${docker_user_flag[@]}" \
+    --env HOME=$HOME \
+    -v $(readlink -f ~/.docker-home):$HOME \
+    -v $(readlink -f ~/.cache/huggingface):$HOME/.cache/huggingface \
+    --env "HF_TOKEN=$HF_TOKEN" \
+    -p $port:$port \
+    --name llama-cpp-gemma4-e4b \
+    $image \
+    -hf $model --no-mmproj \
+    --host 0.0.0.0 --port $port \
+    -c 65536 -np 8 -cb -b 2048 -ub 2048 \
+    -fa on --threads 8 --n-gpu-layers 999 \
+    --cache-type-k bf16 --cache-type-v bf16 \
+    --temperature 1.0 --top_p 0.95 --top_k 64 \
+    --chat-template-kwargs '{"enable_thinking": false}' \
+    --jinja \
+    --spec-type draft-mtp --spec-draft-n-max 2 \
+    # -c 65536 -np 1 -b 4096 -ub 4096 \
+
