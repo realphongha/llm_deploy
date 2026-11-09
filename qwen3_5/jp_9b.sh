@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # from ./llm_deploy
 model=unsloth/Qwen3.5-9B-GGUF:Q4_K_M
-image=llama-cpp-jetson
 port=8008
 source "$(dirname "$0")/../lib/docker_user.sh"
+source "$(dirname "$0")/../lib/llama_image.sh"
 docker run --rm \
     "${docker_user_flag[@]}" \
     --env HOME=$HOME \
@@ -14,7 +14,7 @@ docker run --rm \
     --runtime=nvidia \
     -p $port:$port \
     -it $image \
-    -hf $model \
+    "${llama_cmd[@]}" -hf $model \
     --host 0.0.0.0 --port $port \
     -fa on --threads 8 --n-gpu-layers 999 \
     -b 2048 -ub 2048 --cache-type-k q8_0 --cache-type-v q8_0 \
